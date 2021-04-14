@@ -7,6 +7,14 @@ class TerminateEc2():
     client = boto3.client('ec2')
 
     def Terminate(self,tagname,state):
+    	"""
+		Function used to terminate the EC2 resource on AWS
+		args:
+			tagname(str): ec2 resource tagname in aws
+			state(str): AWS resource state. 
+		return:
+			Returns information about which resource Ec2 and EBS have ended.
+		"""	
         id_ec2 = check_status_ec2.Checkec2()
         list_ec2 = id_ec2.check_id_ec2(tagname,state)
         list_ebs = id_ec2.check_ebs_ec2_id(tagname)
@@ -16,7 +24,7 @@ class TerminateEc2():
         for id in list_ec2:
             id_ec2 = id
             self.ec2.instances.filter(InstanceIds=[id_ec2]).terminate()
-            print(id_ec2 + ' Finalizada com sucesso!')
+            print(id_ec2 + ' successfully ended!')
         time.sleep(60)
         if list_ebs is not None:
             try:
@@ -24,7 +32,10 @@ class TerminateEc2():
             except:
                 pass
             else:
-                print("EBS foi removido!")
+                print("EBS was removed!")
 
-# ip_ec2 = TerminateEc2()
-# list_ec2 = ip_ec2.Terminate('Teste_ec2','running')
+
+"""
+HOW TO EXECUTE FUNCTION
+TerminateEc2().Terminate('Teste_ec2','running')
+"""

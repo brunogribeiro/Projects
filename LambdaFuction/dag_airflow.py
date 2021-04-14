@@ -13,7 +13,7 @@ default_args = {
 }
 
 dag = DAG(
-    'ExemploDAG',
+    'DAGExample',
     default_args=default_args,
     catchup=False,
     schedule_interval='*/15 14-17 * * *',)
