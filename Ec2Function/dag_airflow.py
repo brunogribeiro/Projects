@@ -1,9 +1,12 @@
 from sys import path
-path.insert(0, 'PATH')
+path.insert(0, '/git/master/Ferramentas/AWS')
+import create_ec2
+import terminate_ec2
+import execute_command
 from airflow import DAG
-from airflow.operators import BashOperator
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
-from datetime import datetime
+from datetime import datetime, timedelta
+import configuracao as conf
 
 default_args = {
     'owner': 'airflow',
@@ -17,50 +20,57 @@ dag = DAG(
     default_args=default_args,
     catchup=False,
     schedule_interval='*/15 14-17 * * *',)
+	
+tagname = 'ETL_Example'
 
-def verify_s3_func(*args, **kwargs):
+def verifyS3Func(*args, **kwargs):
     s3_updated = ons_files.verify_db('TESTE')
     if s3_updated == False:
-        return 'waiting_file'
-    return 'create_ec2_acomph'
+        return 'waitingFile'
+    return 'createEc2_acomph'
 
-def waiting_file_func(*args, **kwargs):
+def waitingFileFunc(*args, **kwargs):
     print("Waiting file!")
 
+def create():
+    create_ec2.CreateEc2().CreateInstance(conf.aws['amiPDI'],conf.aws['ec2typeMed'],tagname)
+def terminate():
+    terminate_ec2.TerminateEc2().Terminate(tagname,'running')
+def execute():
+    exec_command.execute_command.exec().run_command(tagname, 'date')
+    
+
 # Verify if the file from the webhook is already updated to s3
-verify_s3 = BranchPythonOperator(
-    task_id='verify_s3',
+verifyS3 = BranchPythonOperator(
+    task_id='verifyS3',
     provide_context=True,
-    python_callable=verify_s3_func,
+    python_callable=verifyS3Func,
     dag=dag)
 
 # If the file is not updated, the dag call this task
-waiting_file = PythonOperator(
-    task_id="waiting_file",
+waitingFile = PythonOperator(
+    task_id="waitingFile",
     provide_context=True,
-    python_callable=waiting_file_func,
+    python_callable=waitingFileFunc,
     dag=dag
 )
 
-command = "python3.6 /home/{}.py {}"
-
-create_ec2 = BashOperator(
-    task_id='create_ec2',
-    bash_command=command.format("runner", "createec2"),
+createEc2 = PythonOperator(
+    task_id='createEc2',
+    python_callable=create,
     dag=dag)
 
-execute = BashOperator(
-    task_id='execute',
-    bash_command=command.format("runner", "acomph"),
-    retries=2,
+ExecCommand = PythonOperator(
+    task_id='Executa_GIT',
+    python_callable=exec_git,
     dag=dag)
 
-terminate_ec2= BashOperator(
-    task_id='terminate_ec2',
-    bash_command=command.format("runner, "terminateec2"),
+terminateEc2 = PythonOperator(
+    task_id='terminateEc2',
+    python_callable=terminate,
     trigger_rule="all_done",
     dag=dag)
-
-verify_s3 >> waiting_file
-verify_s3 >> create_ec2 >> execute >> terminate_ec2
+	
+verifyS3 >> waitingFile
+verifyS3 >> createEc2 >> ExecCommand >> terminateEc2
 
