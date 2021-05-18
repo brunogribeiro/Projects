@@ -122,7 +122,7 @@ def uploadS3():
     files = [f for f in os.listdir(SourceFolderPath) if not f.startswith('.')]
     for file in files:
         filePath = f'{SourceFolderPath}/{file}'
-        s3Path = f'/prevs/{actualDate}/{file}'
+        s3Path = f'/folder/{actualDate}/{file}'
         print(f'uploading file {filePath} to {s3Path}')
         s3Client.upload_file(filePath, bucket, s3Path)
     print("Success! Files Uploaded")
